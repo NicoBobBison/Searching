@@ -9,10 +9,12 @@ class Searcher:
 
     def search(self, start, end):
         end = self.algorithm(self.G, start, end)
+        print("Algorithm complete")
         path = []
         while end != None:
             path.insert(0, end)
             end = self.G.nodes(data=True)[end]["parent"]
+            print(end)
         return path
 
 def dijkstras(G: nx.Graph, start, end):
@@ -39,9 +41,11 @@ def dijkstras(G: nx.Graph, start, end):
             weight = math.dist(G.nodes(data=True)[popped[1]]["pos"], G.nodes(data=True)[popped[1]]["pos"])
             neighbor_tuple = (G.nodes(data=True)[popped[1]]["dist"] + weight, neighbor)
             if neighbor_tuple[0] < G.nodes(data=True)[neighbor]["dist"]:
+                print("Found a shorter path")
                 n = G.nodes(data=True)[neighbor[1]]
                 n["dist"] = neighbor_tuple[0]
                 n["parent"] = popped[1]
+                print(f"Set parent of {n} to {popped[1]}")
                 
             if reached.get(neighbor):
                 continue
