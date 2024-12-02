@@ -10,6 +10,8 @@ parser.add_argument("end", help="Name of ending intersection.")
 parser.add_argument("--map", help="Shows an image of the map and shortest path.", action="store_true")
 args = parser.parse_args()
 
+print("Initializing graph...")
+watch = Stopwatch()
 G = nx.Graph()
 intersections = 0
 roads = 0
@@ -27,22 +29,26 @@ for line in file:
         G.add_edge(u_of_edge=list[2], v_of_edge=list[3])
         roads += 1
 
-print("Finished initializing.")
+print(f"Finished initializing in {watch.get_ms()} ms")
 print(f"Found {intersections} intersections.")
 print(f"Found {roads} roads")
 
-s = Searcher(G, dijkstras)
+s = Searcher(G, astar)
 path = s.search(args.start, args.end)
+path_edges = [(path[n], path[n+1]) for n in range(len(path) - 1)]
+
 if len(path) == 0:
     print(f"Could not find a path between {args.start} and {args.end}")
 else:
     print(f"Found path {path}")
-path_edges = [(path[n], path[n+1]) for n in range(len(path) - 1)]
+    print(f"Path length: {s.path_len(path)}")
+
 
 if args.map:
     nx.draw_networkx_edges(G, pos=pos)
-    nx.draw_networkx_edges(G, pos=pos, edgelist=path_edges, width=1.5, edge_color="tab:red")
-    nx.draw_networkx_nodes(G, pos=pos, nodelist=[args.start, args.end], node_size=10, node_color="tab:red")
-    nx.draw_networkx_labels(G, pos=pos, labels={args.start:args.start, args.end:args.end}, font_color="tab:red")
+    if len(path) > 0:
+        nx.draw_networkx_edges(G, pos=pos, edgelist=path_edges, width=1.5, edge_color="tab:red")
+        nx.draw_networkx_nodes(G, pos=pos, nodelist=[args.start, args.end], node_size=10, node_color="tab:red")
+        nx.draw_networkx_labels(G, pos=pos, labels={args.start:args.start, args.end:args.end}, font_color="tab:red")
 
     pyplot.show()
