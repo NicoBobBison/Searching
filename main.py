@@ -2,9 +2,9 @@ from matplotlib import pyplot
 import networkx as nx
 from src.search import *
 
-path = "./graphs/ur.txt"
-start = "i1"
-end = "i10"
+path = "./graphs/monroe.txt"
+start = "i406"
+end = "i5000"
 
 G = nx.Graph()
 intersections = 0
@@ -26,11 +26,18 @@ for line in file:
 print("Finished initializing.")
 print(f"Found {intersections} intersections.")
 print(f"Found {roads} roads")
+
 s = Searcher(G, dijkstras)
 path = s.search(start, end)
 if path is None:
     print("Could not find a path")
 else:
     print(f"Found path {path}")
+path_edges = [(path[n], path[n+1]) for n in range(len(path) - 1)]
+
 nx.draw_networkx_edges(G, pos=pos)
+nx.draw_networkx_edges(G, pos=pos, edgelist=path_edges, width=1.5, edge_color="tab:red")
+nx.draw_networkx_nodes(G, pos=pos, nodelist=[start, end], node_size=10, node_color="tab:red")
+nx.draw_networkx_labels(G, pos=pos, labels={start:start, end:end}, font_color="tab:red")
+
 pyplot.show()
