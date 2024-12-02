@@ -4,7 +4,7 @@ import argparse
 from src.search import *
 
 parser = argparse.ArgumentParser(description="A program to test various search algorithms.")
-parser.add_argument("filepath", help="File path to raw graph data (.txt).")
+parser.add_argument("filepath", help="File path to raw graph data (stored in ./graphs/___.txt).")
 parser.add_argument("start", help="Name of starting intersection.")
 parser.add_argument("end", help="Name of ending intersection.")
 parser.add_argument("--map", help="Shows an image of the map and shortest path.", action="store_true")

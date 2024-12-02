@@ -33,7 +33,6 @@ def dijkstras(G: nx.Graph, start, end):
     heapq.heappush(frontier, (0, start))
     while len(frontier) > 0:
         popped = heapq.heappop(frontier)
-        # print(popped)
         for neighbor_id in G.neighbors(popped[1]):
             neighbor = G.nodes(data=True)[neighbor_id]
             if neighbor_id == end:
@@ -42,14 +41,9 @@ def dijkstras(G: nx.Graph, start, end):
 
             weight = math.dist(G.nodes(data=True)[popped[1]]["pos"], G.nodes(data=True)[neighbor_id]["pos"])
             neighbor_tuple = (G.nodes(data=True)[popped[1]]["dist"] + weight, neighbor_id)
-            # print(f"Weight: {weight}")
-            # print(f"New possible val: {neighbor_tuple[0]}")
-            # print(f"Original val: {G.nodes(data=True)[neighbor]["dist"]}")
             if neighbor_tuple[0] < neighbor["dist"]:
-                # print("Found a shorter path")
                 neighbor["dist"] = neighbor_tuple[0]
                 neighbor["parent"] = popped[1]
-                # print(f"Set parent of {n} to {popped[1]}")
                 
             if reached.get(neighbor_id):
                 continue
