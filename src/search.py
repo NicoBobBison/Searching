@@ -37,6 +37,7 @@ def dijkstras(G: nx.Graph, start, end):
         node[1]["parent"] = None
 
     # Push starting node to heap
+    # We need to store each node in a tuple (with [0] being the priority in the queue) since there is no custom comparator for heapq
     heapq.heappush(frontier, (0, start))
     while len(frontier) > 0:
         popped = heapq.heappop(frontier)
@@ -80,7 +81,11 @@ def astar(G: nx.Graph, start, end):
                 return neighbor_id
 
             weight = edge_length(G, popped[1], neighbor_id)
-            neighbor_tuple = (G.nodes(data=True)[popped[1]]["dist"] + weight + h(G, neighbor_id, end), neighbor_id)
+            # We need to remove the previous heuristic value (popped_h).
+            popped_h = h(G, popped[1], end)
+            neighbor_h = h(G, neighbor_id, end)
+            neighbor_tuple = (G.nodes(data=True)[popped[1]]["dist"] + weight + neighbor_h - popped_h, neighbor_id)
+
             if neighbor_tuple[0] < neighbor["dist"]:
                 neighbor["dist"] = neighbor_tuple[0]
                 neighbor["parent"] = popped[1]

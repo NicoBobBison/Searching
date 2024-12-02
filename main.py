@@ -8,6 +8,7 @@ parser.add_argument("filepath", help="File path to raw graph data (stored in ./g
 parser.add_argument("start", help="Name of starting intersection.")
 parser.add_argument("end", help="Name of ending intersection.")
 parser.add_argument("--map", help="Shows an image of the map and shortest path.", action="store_true")
+parser.add_argument("--fullpath", help="Shows the full path found.", action="store_true")
 args = parser.parse_args()
 
 print("Initializing graph...")
@@ -33,14 +34,17 @@ print(f"Finished initializing in {watch.get_ms()} ms")
 print(f"Found {intersections} intersections.")
 print(f"Found {roads} roads")
 
-s = Searcher(G, astar)
+s = Searcher(G, dijkstras)
 path = s.search(args.start, args.end)
 path_edges = [(path[n], path[n+1]) for n in range(len(path) - 1)]
 
 if len(path) == 0:
     print(f"Could not find a path between {args.start} and {args.end}")
 else:
-    print(f"Found path {path}")
+    if args.fullpath or len(path) <= 4:
+        print(f"Found path {path}")
+    else:
+        print(f"Found path [{path[0]}, {path[1]}, ... , {path[len(path) - 2]}, {path[len(path) - 1]}]")
     print(f"Path length: {s.path_len(path)}")
 
 
