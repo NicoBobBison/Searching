@@ -25,10 +25,13 @@ class Searcher:
             length += edge_length(self.G, path[i], path[i+1])
         return length
 
+# Dijkstra's shortest path searches new nodes based on their distance to the starting node
+# Characteristics: Complete, optimal
 def dijkstras(G: nx.Graph, start, end):
+    n_count = 0
     frontier = []
     reached = dict()
-    # Reset distances to start
+    # Reset distances to start    
     for node in G.nodes(data=True):
         if node[0] == start:
             node[1]["dist"] = 0
@@ -37,18 +40,21 @@ def dijkstras(G: nx.Graph, start, end):
         node[1]["parent"] = None
 
     # Push starting node to heap
-    # We need to store each node in a tuple (with [0] being the priority in the queue) since there is no custom comparator for heapq
+    # We need to store each node in a tuple (with [0] being the priority in the queue)
+    # since there is no custom comparator for heapq
     heapq.heappush(frontier, (0, start))
     while len(frontier) > 0:
         popped = heapq.heappop(frontier)
+        n_count += 1
         for neighbor_id in G.neighbors(popped[1]):
             neighbor = G.nodes(data=True)[neighbor_id]
             if neighbor_id == end:
                 neighbor["parent"] = popped[1]
+                print(f"Nodes expanded: {n_count}")
                 return neighbor_id
 
-            weight = edge_length(G, popped[1], neighbor_id)
-            neighbor_tuple = (G.nodes(data=True)[popped[1]]["dist"] + weight, neighbor_id)
+            edge_weight = edge_length(G, popped[1], neighbor_id)
+            neighbor_tuple = (G.nodes(data=True)[popped[1]]["dist"] + edge_weight, neighbor_id)
             if neighbor_tuple[0] < neighbor["dist"]:
                 neighbor["dist"] = neighbor_tuple[0]
                 neighbor["parent"] = popped[1]
@@ -57,9 +63,14 @@ def dijkstras(G: nx.Graph, start, end):
                 continue
             heapq.heappush(frontier, neighbor_tuple)
             reached[neighbor_id] = neighbor_tuple
+    print(f"Nodes expanded: {n_count}")
     return None
 
-def astar(G: nx.Graph, start, end):
+# A* pathfinding is like Dijkstra's, but also factors in h(x),
+# the heuristic evaluation representing the distance from a node x to the end node
+# Characteristics: Complete, optimal
+def astar(G: nx.Graph, start, end, weight = 1):
+    n_count = 0
     frontier = []
     reached = dict()
     # Reset distances to start
@@ -74,17 +85,19 @@ def astar(G: nx.Graph, start, end):
     heapq.heappush(frontier, (h(G, start, end), start))
     while len(frontier) > 0:
         popped = heapq.heappop(frontier)
+        n_count += 1
         for neighbor_id in G.neighbors(popped[1]):
             neighbor = G.nodes(data=True)[neighbor_id]
             if neighbor_id == end:
                 neighbor["parent"] = popped[1]
+                print(f"Nodes expanded: {n_count}")
                 return neighbor_id
 
-            weight = edge_length(G, popped[1], neighbor_id)
+            edge_weight = edge_length(G, popped[1], neighbor_id)
             # We need to remove the previous heuristic value (popped_h).
-            popped_h = h(G, popped[1], end)
-            neighbor_h = h(G, neighbor_id, end)
-            neighbor_tuple = (G.nodes(data=True)[popped[1]]["dist"] + weight + neighbor_h - popped_h, neighbor_id)
+            popped_h = h(G, popped[1], end) * weight
+            neighbor_h = h(G, neighbor_id, end) * weight
+            neighbor_tuple = (G.nodes(data=True)[popped[1]]["dist"] + edge_weight + neighbor_h - popped_h, neighbor_id)
 
             if neighbor_tuple[0] < neighbor["dist"]:
                 neighbor["dist"] = neighbor_tuple[0]
@@ -94,4 +107,13 @@ def astar(G: nx.Graph, start, end):
                 continue
             heapq.heappush(frontier, neighbor_tuple)
             reached[neighbor_id] = neighbor_tuple
+    print(f"Nodes expanded: {n_count}")
     return None
+
+# Weighted A* adds more weight to h(x)
+# This causes the algorithm to search fewer nodes, but it may not find the optimal path if it goes outside
+# the searches contour.
+# Characteristics: Complete, but not optimal (path length will be bounded by C* and W x C*, with C* the 
+# length of the shortest path and W the weight)
+def weighted_astar(G: nx.Graph, start, end, weight = 1.5):
+    return astar(G, start, end, weight)
