@@ -90,13 +90,13 @@ def astar(P: Problem, weight = 1):
     # Reset distances to start
     for node in P.G.nodes(data=True):
         if node[0] == P.start:
-            node[1]["dist"] = P.h(P.G, P.start, P.end)
+            node[1]["dist"] = P.h(P, P.start)
         else:
             node[1]["dist"] = math.inf
         node[1]["parent"] = None
 
     # Push starting node to heap
-    heapq.heappush(frontier, (P.h(P.G, P.start, P.end), P.start))
+    heapq.heappush(frontier, (P.h(P, P.start), P.start))
     while len(frontier) > 0:
         popped = heapq.heappop(frontier)
         n_count += 1
@@ -119,8 +119,8 @@ def astar(P: Problem, weight = 1):
                 edge_weight = 1
 
             # We need to remove the previous heuristic value (popped_h).
-            popped_h = P.h(P.G, popped[1], P.end) * weight
-            neighbor_h = P.h(P.G, neighbor_id, P.end) * weight
+            popped_h = P.h(P, popped[1]) * weight
+            neighbor_h = P.h(P, neighbor_id) * weight
             neighbor_tuple = (P.G.nodes(data=True)[popped[1]]["dist"] + edge_weight + neighbor_h - popped_h, neighbor_id)
 
             if neighbor_tuple[0] < neighbor["dist"]:

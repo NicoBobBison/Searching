@@ -3,6 +3,9 @@ import networkx as nx
 import argparse
 from src.search import *
 
+def h(P, node):
+    return node_dist(P.G, node, P.end)
+
 parser = argparse.ArgumentParser(description="A program to test various search algorithms for pathfinding.")
 parser.add_argument("filepath", help="File path to raw graph data (stored in ./graphs/___.txt).")
 parser.add_argument("start", help="Name of starting intersection.")
@@ -40,9 +43,9 @@ match args.algorithm:
     case "dijkstras":
         p = Problem(G, dijkstras, True)
     case "astar":
-        p = Problem(G, astar, True, node_dist)
+        p = Problem(G, astar, True, h)
     case "weighted_astar":
-        p = Problem(G, weighted_astar, True, node_dist)
+        p = Problem(G, weighted_astar, True, h)
 
 path = p.search(args.start, args.end)
 path_edges = [(path[n], path[n+1]) for n in range(len(path) - 1)]
