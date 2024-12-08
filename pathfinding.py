@@ -1,11 +1,9 @@
-import importlib
 from matplotlib import pyplot
 import networkx as nx
 import argparse
-import src.search
 from src.search import *
 
-parser = argparse.ArgumentParser(description="A program to test various search algorithms.")
+parser = argparse.ArgumentParser(description="A program to test various search algorithms for pathfinding.")
 parser.add_argument("filepath", help="File path to raw graph data (stored in ./graphs/___.txt).")
 parser.add_argument("start", help="Name of starting intersection.")
 parser.add_argument("end", help="Name of ending intersection.")
@@ -37,8 +35,16 @@ print(f"Finished initializing in {watch.get_ms()} ms")
 print(f"Found {intersections} intersections.")
 print(f"Found {roads} roads")
 
-s = Searcher(G, getattr(src.search, args.algorithm))
-path = s.search(args.start, args.end)
+
+match args.algorithm:
+    case "dijkstras":
+        p = Problem(G, dijkstras, True)
+    case "astar":
+        p = Problem(G, astar, True, node_dist)
+    case "weighted_astar":
+        p = Problem(G, weighted_astar, True, node_dist)
+
+path = p.search(args.start, args.end)
 path_edges = [(path[n], path[n+1]) for n in range(len(path) - 1)]
 
 if len(path) == 0:
@@ -48,7 +54,7 @@ else:
         print(f"Found path {path}")
     else:
         print(f"Found path [{path[0]}, {path[1]}, ... , {path[len(path) - 2]}, {path[len(path) - 1]}]")
-    print(f"Path length: {s.path_len(path)}")
+    print(f"Path length: {path_len(G, path)}")
 
 if args.map:
     nx.draw_networkx_edges(G, pos=pos)
