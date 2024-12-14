@@ -2,6 +2,7 @@ import argparse
 import networkx as nx
 from src.search import *
 import copy
+import random
 
 class State:
     def __init__(self, width, id_to_pos, pos_to_id) -> None:
@@ -97,9 +98,7 @@ def manhattan_to_correct(P: Problem, node: State):
         y_desired = i // node.width
         x_actual = int(node.pos_to_id[i]) % node.width
         y_actual = int(node.pos_to_id[i]) // node.width
-
         count += abs(x_desired - x_actual) + abs(y_desired - y_actual)
-
     return count
 
 def expand(P: Problem, node):
@@ -110,17 +109,42 @@ def expand(P: Problem, node):
         P.G.add_edge(node, neighbor)
     return node.neighbors()
 
+def solvable(s: State):
+    count = 0
+    for i in range(len(s.pos_to_id)):
+        if s.pos_to_id[i] == "-" or (i + 1 < len(s.pos_to_id) and s.pos_to_id[i+1] == "-"):
+            continue
+        if i + 1 < len(s.pos_to_id) and s.pos_to_id[i] > s.pos_to_id[i+1]:
+            count += 1
+    return count % 2 == 0
+
 parser = argparse.ArgumentParser(description="A program to test various search algorithms for 8 and 16 puzzles.")
 parser.add_argument("type", choices=["8", "16"], help="The size of the puzzle.")
 parser.add_argument("algorithm", choices=["dijkstras", "astar", "weighted_astar"], help="Search algorithm to run.")
 args = parser.parse_args()
 
-input = input(f"Enter {args.type} unique integers from 1 to {"8" if args.type == "8" else "15"} and a blank (\"-\") separated by spaces:\n")
+input = input(f"Enter {args.type} unique integers from 1 to {"8" if args.type == "8" else "15"} and a blank (\"-\") separated by spaces, or enter \"random\" for a random puzzle:\n")
 
 width = 3 if args.type == "8" else 4
 s = State(width, {}, {})
-s.load_config(input.split(" "))
+
+if input == "random":
+    config = ["-"]
+    for i in range(1, width ** 2):
+        config.append(str(i))
+    random.shuffle(config)
+    s.load_config(config)
+    while not solvable(s):
+        random.shuffle(config)
+        s.load_config(config)
+else:
+    s.load_config(input.split(" "))
+
 print(s)
+
+if not solvable(s):
+    print("This puzzle is not solvable!")
+    exit()
 
 final = State(width, {}, {})
 if width == 3:
