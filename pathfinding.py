@@ -50,7 +50,9 @@ match args.algorithm:
 path = p.search(args.start, args.end)
 path_edges = [(path[n], path[n+1]) for n in range(len(path) - 1)]
 
-if len(path) == 0:
+if path == "same":
+    print("Start and end nodes are the same!")
+elif len(path) == 0:
     print(f"Could not find a path between {args.start} and {args.end}")
 else:
     if args.fullpath or len(path) <= 4:

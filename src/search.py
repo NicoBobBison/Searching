@@ -19,6 +19,8 @@ class Problem:
 
     def search(self, start, end):
         s = Stopwatch()
+        if start == end:
+            return "same"
         self.start = start
         self.end = end
         end_node = self.algorithm(self)
