@@ -63,6 +63,31 @@ class State:
     
     def __hash__(self) -> int:
         return hash(self.__str__())
+    
+    def id_moved(self, other):
+        for i, j in zip(self.state, other.state):
+            if i != j:
+                if i == "-":
+                    return j
+                return i
+
+# Disjoint pattern database
+class DisjointPattern:
+    def __init__(self):
+        self.state_cost = {}
+    
+    def populate(self, goal: State):
+        self.state_cost = {}
+        self.__store_state(goal, 0)
+    
+    # TODO: Rewrite this as a queue of tuples (dist, state), since recursion reaches the depth limit
+    def __store_state(self, state: State, dist):
+        if self.state_cost.get(state) is not None:
+            return
+        self.state_cost[state] = dist
+        for neighbor in state.neighbors():
+            d = dist if state.id_moved(neighbor) == "*" else dist + 1
+            self.__store_state(neighbor, d)
 
 # Counts the number of wrong cells
 def wrong_count(P: Problem, node: State):
@@ -76,7 +101,7 @@ def wrong_count(P: Problem, node: State):
 
 # Counts the Manhattan distance between each tile with its goal position
 # Much better heuristic, used by default
-def manhattan_to_correct(P: Problem, node: State):
+def manhattan(P: Problem, node: State):
     count = 0
     for i in range(len(node.state)):
         if node.state[i] == "-":
@@ -88,6 +113,17 @@ def manhattan_to_correct(P: Problem, node: State):
         count += abs(x_desired - x_actual) + abs(y_desired - y_actual)
     return count
 
+def disjoint(P: Problem, node: State):
+    top = node.deepcopy()
+    bot = node.deepcopy()
+    for i in range(1, len(top.state)):
+        if i > len(top.state) // 2:
+            top.state[i] = "*"
+        else:
+            bot.state[i] = "*"
+    print(f"Top: {top.state}")
+    print(f"Bot: {bot.state}")
+
 def expand(P: Problem, node):
     for neighbor in node.neighbors():
         if P.G.has_node(neighbor):
@@ -97,21 +133,21 @@ def expand(P: Problem, node):
     return node.neighbors()
 
 def solvable(s: State):
-    count = 0
+    inversions = 0
     for i in range(len(s.state)):
         for j in range(i + 1, len(s.state)):
             if s.state[i] == "-" or s.state[j] == "-":
                 continue
             if int(s.state[i]) > int(s.state[j]):
-                count += 1
+                inversions += 1
 
     if s.width % 2 == 1:
-        return count % 2 == 0
+        return inversions % 2 == 0
     else:
         blank = s.state.index("-")
         row = blank // s.width
         row_from_bottom = (s.width - row) + 1
-        return (count % 2 == 0 and row_from_bottom % 2 == 1) or (count % 2 == 1 and row_from_bottom % 2 == 0)
+        return (inversions % 2 == 0 and row_from_bottom % 2 == 1) or (inversions % 2 == 1 and row_from_bottom % 2 == 0)
 
 parser = argparse.ArgumentParser(description="A program to test various search algorithms for 8 and 16 puzzles.")
 parser.add_argument("type", choices=["8", "16"], help="The size of the puzzle.")
@@ -141,11 +177,22 @@ if not solvable(s):
     print("This puzzle is not solvable!")
     exit()
 
+print("Generating disjoint patterns databases...")
+timer = Stopwatch()
+disjoint_top = DisjointPattern()
+disjoint_bot = DisjointPattern()
+
 final = State(width, [])
 if width == 3:
     final.state = ["-", "1", "2", "3", "4", "5", "6", "7", "8"]
+    disjoint_top.populate(State(width, ["-", "1", "2", "3", "4", "*", "*", "*", "*"]))
+    disjoint_bot.populate(State(width, ["-", "*", "*", "*", "*", "5", "6", "7", "8"]))
 else:
     final.state = ["-", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]
+    disjoint_top.populate(State(width, ["-", "1", "2", "3", "4", "5", "6", "7", "*", "*", "*", "*", "*", "*", "*", "*"]))
+    disjoint_bot.populate(State(width, ["-", "*", "*", "*", "*", "*", "*", "*", "8", "9", "10", "11", "12", "13", "14", "15"]))
+
+print(f"Completed creating disjoint pattern databases in {timer.get_ms()} ms")
 
 G = nx.Graph()
 G.add_node(s)
@@ -153,9 +200,10 @@ match args.algorithm:
     case "dijkstras":
         p = Problem(G, dijkstras, False, neighbor_gen=expand)
     case "astar":
-        p = Problem(G, astar, False, manhattan_to_correct, expand)
+        p = Problem(G, astar, False, manhattan, expand)
     case "weighted_astar":
-        p = Problem(G, weighted_astar, False, manhattan_to_correct, expand)
+        p = Problem(G, weighted_astar, False, manhattan, expand)
+disjoint(p, final)
 
 path = p.search(s, final)
 
