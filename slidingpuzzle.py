@@ -29,10 +29,10 @@ class State:
         possible_dir[:] = [i for i in possible_dir if not should_remove(i)]
         
         for p in possible_dir:
-            swapped = self.state[p]
-            self.swap_id("-", swapped)
+            i = self.state.index("-")
+            self.swap_index(i, p)
             neighbors.append(State(self.width, copy.deepcopy(self.state)))
-            self.swap_id("-", swapped)
+            self.swap_index(i, p)
         return neighbors
         
     def swap_id(self, id1, id2):
@@ -78,9 +78,19 @@ class DisjointPattern:
     
     def populate(self, goal: State):
         self.state_cost = {}
-        self.__store_state(goal, 0)
-    
-    # TODO: Rewrite this as a queue of tuples (dist, state), since recursion reaches the depth limit
+        queue = []
+        queue.append((goal, 0))
+        while len(queue) > 0:
+            tup = queue.pop()
+            state = tup[0]
+            dist = tup[1]
+            if self.state_cost.get(state) is not None:
+                continue
+            self.state_cost[state] = dist
+            for neighbor in state.neighbors():
+                d = dist if state.id_moved(neighbor) == "*" else dist + 1
+                queue.append((neighbor, d))
+
     def __store_state(self, state: State, dist):
         if self.state_cost.get(state) is not None:
             return
@@ -114,15 +124,36 @@ def manhattan(P: Problem, node: State):
     return count
 
 def disjoint(P: Problem, node: State):
-    top = node.deepcopy()
-    bot = node.deepcopy()
-    for i in range(1, len(top.state)):
-        if i > len(top.state) // 2:
-            top.state[i] = "*"
-        else:
-            bot.state[i] = "*"
-    print(f"Top: {top.state}")
-    print(f"Bot: {bot.state}")
+    if node.width == 3:
+        top = copy.deepcopy(node)
+        bot = copy.deepcopy(node)
+        for i in range(len(top.state)):
+            if top.state[i] != "-" and int(top.state[i]) > len(top.state) // 2:
+                top.state[i] = "*"
+        for i in range(len(bot.state)):
+            if bot.state[i] != "-" and int(bot.state[i]) <= len(bot.state) // 2:
+                bot.state[i] = "*"
+        return disjoint_dbs[0].state_cost[top] + disjoint_dbs[1].state_cost[bot]
+    elif node.width == 4:
+        first = copy.deepcopy(node)
+        second = copy.deepcopy(node)
+        third = copy.deepcopy(node)
+        fourth = copy.deepcopy(node)
+        for i in range(len(first.state)):
+            if first.state[i] != "-" and int(first.state[i]) >= 4:
+                first.state[i] = "*"
+        for i in range(len(second.state)):
+            if second.state[i] != "-" and (int(second.state[i]) < 4 or int(second.state[i]) >= 8):
+                second.state[i] = "*"
+        for i in range(len(third.state)):
+            if third.state[i] != "-" and (int(third.state[i]) < 8 or int(third.state[i]) >= 12):
+                third.state[i] = "*"
+        for i in range(len(fourth.state)):
+            if fourth.state[i] != "-" and int(fourth.state[i]) < 12:
+                fourth.state[i] = "*"
+        return disjoint_dbs[0].state_cost[first] + disjoint_dbs[1].state_cost[second] + disjoint_dbs[2].state_cost[third] + disjoint_dbs[3].state_cost[fourth]
+
+    
 
 def expand(P: Problem, node):
     for neighbor in node.neighbors():
@@ -179,18 +210,35 @@ if not solvable(s):
 
 print("Generating disjoint patterns databases...")
 timer = Stopwatch()
-disjoint_top = DisjointPattern()
-disjoint_bot = DisjointPattern()
+disjoint_dbs = []
 
 final = State(width, [])
 if width == 3:
     final.state = ["-", "1", "2", "3", "4", "5", "6", "7", "8"]
-    disjoint_top.populate(State(width, ["-", "1", "2", "3", "4", "*", "*", "*", "*"]))
-    disjoint_bot.populate(State(width, ["-", "*", "*", "*", "*", "5", "6", "7", "8"]))
+    dj1 = DisjointPattern()
+    dj2 = DisjointPattern()
+    dj1.populate(State(width, ["-", "1", "2", "3", "4", "*", "*", "*", "*"]))
+    dj2.populate(State(width, ["-", "*", "*", "*", "*", "5", "6", "7", "8"]))
+    disjoint_dbs.append(dj1)
+    disjoint_dbs.append(dj2)
 else:
     final.state = ["-", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]
-    disjoint_top.populate(State(width, ["-", "1", "2", "3", "4", "5", "6", "7", "*", "*", "*", "*", "*", "*", "*", "*"]))
-    disjoint_bot.populate(State(width, ["-", "*", "*", "*", "*", "*", "*", "*", "8", "9", "10", "11", "12", "13", "14", "15"]))
+    dj1 = DisjointPattern()
+    dj2 = DisjointPattern()
+    dj3 = DisjointPattern()
+    dj4 = DisjointPattern()
+    dj1.populate(State(width, ["-", "1", "2", "3", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*"]))
+    print("First generated...")
+    dj2.populate(State(width, ["-", "*", "*", "*", "4", "5", "6", "7", "*", "*", "*", "*", "*", "*", "*", "*"]))
+    print("Second generated...")
+    dj3.populate(State(width, ["-", "*", "*", "*", "*", "*", "*", "*", "8", "9", "10", "11", "*", "*", "*", "*"]))
+    print("Third generated...")
+    dj4.populate(State(width, ["-", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "12", "13", "14", "15"]))
+    print("Fourth generated...")
+    disjoint_dbs.append(dj1)
+    disjoint_dbs.append(dj2)
+    disjoint_dbs.append(dj3)
+    disjoint_dbs.append(dj4)
 
 print(f"Completed creating disjoint pattern databases in {timer.get_ms()} ms")
 
@@ -200,10 +248,9 @@ match args.algorithm:
     case "dijkstras":
         p = Problem(G, dijkstras, False, neighbor_gen=expand)
     case "astar":
-        p = Problem(G, astar, False, manhattan, expand)
+        p = Problem(G, astar, False, disjoint, expand)
     case "weighted_astar":
-        p = Problem(G, weighted_astar, False, manhattan, expand)
-disjoint(p, final)
+        p = Problem(G, weighted_astar, False, disjoint, expand)
 
 path = p.search(s, final)
 
